@@ -24,10 +24,13 @@ dataset_dir = 'AI4Arctic_challenge_data'
 
 with ftplib.FTP(host=host, user=usr, passwd=pw) as ftp:
     list_of_netcdfs = [file for file in ftp.nlst(dataset_dir) if file.endswith('.nc')]
-    test_file = list_of_netcdfs[2]
-    with open(os.path.join(os.getcwd(), os.path.basename(test_file)), 'wb') as f:
-        ftp.retrbinary("RETR " + test_file, f.write)
-ds = xr.open_dataset(os.path.basename(test_file))
+    for i in range(2,21):
+        test_file = list_of_netcdfs[i]
+        with open(os.path.join(os.getcwd(), os.path.basename(test_file)), 'wb') as f:
+            ftp.retrbinary("RETR " + test_file, f.write)
+
+
+ds = xr.open_dataset('S1A_EW_GRDM_1SDH_20190507T101118_20190507T101218_027120_030E8D_4E4F_icechart_cis_SGRDINFLD_20190507T1011Z_pl_a.nc')
 
 ### GET PARAMETERS FROM THE DATASET ###
 # Get Images in HH and HV Polarization
@@ -71,7 +74,7 @@ v = ds['v10m_rotated'].values   #range
 
 # Obtain wind speed/power, and angle w.r.t Azimuth
 W_pow = np.sqrt(u**2 + v**2)
-phi = -np.arcsin(v/W_pow)*180/np.pi
+phi = np.arccos(u/W_pow)*180/np.pi
 
 # Reshaping SAR coord. to 2km grid --> Interpolate data tp 2km grid size
 x = np.linspace(0,np.shape(u)[1]-1,21)
@@ -117,13 +120,9 @@ amsr_multi_freq = np.empty((np.shape(V)[0], np.shape(V)[1], n_freq))
 
 for i in range(np.shape(V)[0]):
     for j in range(np.shape(V)[1]):
-       amsr_multi_freq[i,j,:] = amsr(V[i,j],W_pow[i,j],L[i,j],Ta[i,j],Ts,Ti_amsrv,Ti_amsrh,c_ice,e_icev,e_iceh,theta_reshaped[i,j])
+       amsr_multi_freq[i,j,:] = amsr(V[i,j],W_pow[i,j],L[i,j],Ta[i,j],Ts,Ti_amsrv,Ti_amsrh,c_ice,e_icev,e_iceh,55)
 
-fig, ax = plt.subplots()
-pos = ax.imshow(amsr_multi_freq[:,:,2])
-cbar = fig.colorbar(pos, ax=ax, extend='both')
-cbar.minorticks_on()
-   
+
 
 ### Plotting results ###
 
@@ -159,12 +158,64 @@ ax.set(title='W wind speed (Azimuth)')
 
 # Cmond5n estimates wind
 fig, ax = plt.subplots()
-pos = ax.imshow(cmod5n_values)
+pos = ax.imshow(10*np.log10(cmod5n_values))
 cbar = fig.colorbar(pos, ax=ax, extend='both')
 cbar.minorticks_on()
 ax.set(title='CMOD5N wind speed (Azimuth)')
 
     
+
+### AMSR2 COMPARISON ###
+
+fig, ax = plt.subplots()
+pos = ax.imshow(bt_10_7_h)
+cbar = fig.colorbar(pos, ax=ax, extend='both')
+cbar.minorticks_on()
+ax.set(title='AMSR2 10_7_h dataset')
+
+fig, ax = plt.subplots()
+pos = ax.imshow(amsr_multi_freq[:,:,3])
+cbar = fig.colorbar(pos, ax=ax, extend='both')
+cbar.minorticks_on()
+ax.set(title='AMSR2 10_7_h model')
+
+fig, ax = plt.subplots()
+pos = ax.imshow(bt_18_7_h)
+cbar = fig.colorbar(pos, ax=ax, extend='both')
+cbar.minorticks_on()
+ax.set(title='AMSR2 18_7_h dataset')
+
+fig, ax = plt.subplots()
+pos = ax.imshow(amsr_multi_freq[:,:,5])
+cbar = fig.colorbar(pos, ax=ax, extend='both')
+cbar.minorticks_on()
+ax.set(title='AMSR2 18_7_h model')
+
+fig, ax = plt.subplots()
+pos = ax.imshow(bt_23_8_h)
+cbar = fig.colorbar(pos, ax=ax, extend='both')
+cbar.minorticks_on()
+ax.set(title='AMSR2 23_8_h dataset')
+
+fig, ax = plt.subplots()
+pos = ax.imshow(amsr_multi_freq[:,:,7])
+cbar = fig.colorbar(pos, ax=ax, extend='both')
+cbar.minorticks_on()
+ax.set(title='AMSR2 23_8_h model')
+
+fig, ax = plt.subplots()
+pos = ax.imshow(bt_36_5_h)
+cbar = fig.colorbar(pos, ax=ax, extend='both')
+cbar.minorticks_on()
+ax.set(title='AMSR2 36_5_h dataset')
+
+fig, ax = plt.subplots()
+pos = ax.imshow(amsr_multi_freq[:,:,9])
+cbar = fig.colorbar(pos, ax=ax, extend='both')
+cbar.minorticks_on()
+ax.set(title='AMSR2 36_5_h model')
+
+
 ## Example of good plot
 dm = ds['distance_map'].values
 fig, ax = plt.subplots()
@@ -180,7 +231,7 @@ plt.show()
 
 ## Example of Quick visualization Plot
 fig, ax = plt.subplots()
-pos = ax.imshow(dm)
+pos = ax.imshow(aux)
 cbar = fig.colorbar(pos, ax=ax, extend='both')
 cbar.minorticks_on()
    
